@@ -25,7 +25,7 @@ model_config:
     direct_features_input: false
     bert_model_name: bert-base-uncased
     training_head_type: composition
-    bypass_transformer: true
+    bypass_transformer: false
     losses:
       - type: bbc_loss
 
@@ -63,7 +63,7 @@ training:
     criteria: fashioniq/r@k_fashioniq/avg
     minimize: false
   wandb:
-    enabled: true
+    enabled: false
 
 run_type: train_val
 

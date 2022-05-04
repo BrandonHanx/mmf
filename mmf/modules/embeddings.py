@@ -353,6 +353,7 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
         visual_embeddings: Tensor,
         visual_embeddings_type: Tensor,
         image_text_alignment: Optional[Tensor] = None,
+        prefix_prompts: Optional[Tensor] = None,
     ) -> Tensor:
 
         visual_embeddings = self.projection(visual_embeddings)
@@ -372,6 +373,12 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
             + position_embeddings_visual
             + token_type_embeddings_visual
         )
+
+        if prefix_prompts is not None:
+            return torch.cat(
+                (prefix_prompts.expand(v_embeddings.shape[0], -1, -1), v_embeddings),
+                dim=1,
+            )
         return v_embeddings
 
     def get_position_embeddings_visual(
@@ -457,8 +464,9 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
             use_vis = True
             v_embeddings = self.encode_image(
                 visual_embeddings,
-                visual_embeddings_type=visual_embeddings_type,
-                image_text_alignment=image_text_alignment,
+                visual_embeddings_type,
+                image_text_alignment,
+                prefix_prompts if not use_txt else None,
             )
 
         if use_txt:

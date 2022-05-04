@@ -45,7 +45,14 @@ class FashionViLForComposition(FashionViLBaseModel):
                 ),
                 dim=-1,
             )
-        sample_list["visual_attention_mask"] = torch.ones((b, l), device=device).long()
+        if not self.config.bypass_transformer and self.prefix_prompts is not None:
+            sample_list["visual_attention_mask"] = torch.ones(
+                (b, self.prefix_prompts.size(1) + l), device=device
+            ).long()
+        else:
+            sample_list["visual_attention_mask"] = torch.ones(
+                (b, l), device=device
+            ).long()
         return sample_list
 
     def flatten_for_bert(self, sample_list: Dict[str, Tensor]) -> Dict[str, Tensor]:
@@ -59,6 +66,7 @@ class FashionViLForComposition(FashionViLBaseModel):
             sample_list["tar_image"],
             sample_list["tar_visual_embeddings_type"],
             sample_list["visual_attention_mask"],
+            self.prefix_prompts if not self.config.bypass_transformer else None,
         )
         tar_embeddings = tar_embeddings.mean(dim=1)
         tar_embeddings = self.norm_layer(tar_embeddings)

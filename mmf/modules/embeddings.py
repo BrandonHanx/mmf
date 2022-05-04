@@ -323,7 +323,10 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
         )
 
     def encode_text(
-        self, input_ids: Tensor, token_type_ids: Optional[Tensor] = None
+        self,
+        input_ids: Tensor,
+        token_type_ids: Optional[Tensor] = None,
+        prefix_prompts: Optional[Tensor] = None,
     ) -> Tensor:
         seq_length = input_ids.size(1)
         position_ids = torch.arange(
@@ -338,6 +341,11 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
         position_embeddings = self.position_embeddings(position_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
         embeddings = words_embeddings + position_embeddings + token_type_embeddings
+
+        if prefix_prompts is not None:
+            return torch.cat(
+                (prefix_prompts.expand(embeddings.shape[0], -1, -1), embeddings), dim=1
+            )
         return embeddings
 
     def encode_image(
@@ -426,6 +434,7 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
         visual_embeddings: Optional[Tensor] = None,
         visual_embeddings_type: Optional[Tensor] = None,
         image_text_alignment: Optional[Tensor] = None,
+        prefix_prompts: Optional[Tensor] = None,
     ) -> Tensor:
         """
         input_ids = [batch_size, sequence_length]
@@ -439,7 +448,9 @@ class BertVisioLinguisticEmbeddings(BertEmbeddings):
         # text embeddings
         if input_ids is not None and token_type_ids is not None:
             use_txt = True
-            text_embeddings = self.encode_text(input_ids, token_type_ids=token_type_ids)
+            text_embeddings = self.encode_text(
+                input_ids, token_type_ids, prefix_prompts
+            )
 
         # visual embeddings
         if visual_embeddings is not None and visual_embeddings_type is not None:

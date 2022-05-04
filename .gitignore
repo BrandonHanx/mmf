@@ -34,3 +34,4 @@ logs/
 .netrc
 condor_log/
 docker_stderror
+visualization/

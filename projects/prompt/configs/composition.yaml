@@ -1,0 +1,75 @@
+# FashionIQ data nums: 18000
+
+includes:
+- configs/models/fashionvil/defaults.yaml
+
+dataset_config:
+  fashioniq:
+    use_images: true
+    use_features: false
+
+model_config:
+  fashionvil:
+    freeze_image_encoder: true
+    freeze_transformer: true
+    enable_prompt: true
+    image_encoder:
+      type: torchvision_resnet
+      params:
+        name: resnet50
+        pretrained: true
+        zero_init_residual: false
+        num_output_features: -1
+        pool_type: avg
+    lr_multiplier: 20
+    direct_features_input: false
+    bert_model_name: bert-base-uncased
+    training_head_type: composition
+    bypass_transformer: true
+    losses:
+      - type: bbc_loss
+
+scheduler:
+  type: multi_step
+  params:
+    use_warmup: false
+    lr_steps:
+    - 16860
+    - 28100
+    lr_ratio: 0.1
+    warmup_iterations: 2810
+    warmup_factor: 0.25
+
+optimizer:
+  type: adam_w
+  params:
+    lr: 1e-4
+    eps: 1e-8
+    weight_decay: 1e-4
+
+evaluation:
+  metrics:
+    - r@k_fashioniq
+
+training:
+  experiment_name: prompt_fashioniq
+  batch_size: 32
+  lr_scheduler: true
+  max_updates: 44960
+  log_interval: 10
+  checkpoint_interval: 5620
+  evaluation_interval: 562
+  early_stop:
+    criteria: fashioniq/r@k_fashioniq/avg
+    minimize: false
+  wandb:
+    enabled: true
+
+run_type: train_val
+
+checkpoint:
+  resume_pretrained: true
+  resume_file: save/backup_ckpts/fashionvil_final.pth
+  pretrained_state_mapping:
+    image_encoder: image_encoder
+    model.bert: model.bert

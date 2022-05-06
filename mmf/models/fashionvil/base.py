@@ -51,7 +51,6 @@ class FashionViLBase(BertPreTrainedModel):
         visual_embeddings: Optional[Tensor] = None,
         visual_embeddings_type: Optional[Tensor] = None,
         attention_mask: Optional[Tensor] = None,
-        prefix_prompts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor, List[Tensor]]:
 
         extended_attention_mask = None
@@ -68,7 +67,6 @@ class FashionViLBase(BertPreTrainedModel):
             token_type_ids,
             visual_embeddings=visual_embeddings,
             visual_embeddings_type=visual_embeddings_type,
-            prefix_prompts=prefix_prompts,
         )
 
         encoded_layers = self.encoder(embedding_output, extended_attention_mask)
@@ -93,7 +91,6 @@ class FashionViLBase(BertPreTrainedModel):
         visual_embeddings: Tensor,
         visual_embeddings_type: Tensor,
         attention_mask: Tensor,
-        prefix_prompts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor, List[Tensor]]:
         return self.forward(
             input_ids=input_ids,
@@ -101,7 +98,6 @@ class FashionViLBase(BertPreTrainedModel):
             visual_embeddings=visual_embeddings,
             visual_embeddings_type=visual_embeddings_type,
             attention_mask=attention_mask,
-            prefix_prompts=prefix_prompts,
         )
 
     def get_image_embedding(
@@ -109,7 +105,6 @@ class FashionViLBase(BertPreTrainedModel):
         visual_embeddings: Tensor,
         visual_embeddings_type: Tensor,
         attention_mask: Optional[Tensor] = None,
-        prefix_prompts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor, List[Tensor]]:
         if self.bypass_transformer:
             return self.embeddings.projection(visual_embeddings), None, None
@@ -118,7 +113,6 @@ class FashionViLBase(BertPreTrainedModel):
                 visual_embeddings=visual_embeddings,
                 visual_embeddings_type=visual_embeddings_type,
                 attention_mask=attention_mask,
-                prefix_prompts=prefix_prompts,
             )
 
     def get_text_embedding(
@@ -126,13 +120,11 @@ class FashionViLBase(BertPreTrainedModel):
         input_ids: Tensor,
         token_type_ids: Tensor,
         attention_mask: Tensor,
-        prefix_prompts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor, List[Tensor]]:
         return self.forward(
             input_ids=input_ids,
             token_type_ids=token_type_ids,
             attention_mask=attention_mask,
-            prefix_prompts=prefix_prompts,
         )
 
 

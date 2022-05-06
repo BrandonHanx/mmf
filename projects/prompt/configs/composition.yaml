@@ -12,7 +12,7 @@ model_config:
   fashionvil:
     freeze_image_encoder: true
     freeze_transformer: true
-    enable_prompt: true
+    prompt: deep
     image_encoder:
       type: torchvision_resnet
       params:
@@ -52,7 +52,7 @@ evaluation:
     - r@k_fashioniq
 
 training:
-  experiment_name: prompt_fashioniq
+  experiment_name: deep_prompt_fashioniq
   batch_size: 32
   lr_scheduler: true
   max_updates: 44960
@@ -63,7 +63,7 @@ training:
     criteria: fashioniq/r@k_fashioniq/avg
     minimize: false
   wandb:
-    enabled: false
+    enabled: true
 
 run_type: train_val
 

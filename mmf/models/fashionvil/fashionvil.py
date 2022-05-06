@@ -41,16 +41,14 @@ class FashionViL(BaseModel):
         super().train(mode)
         if self.freeze_image_encoder:
             self.image_encoder.eval()
-        if self.freeze_transformer:
-            self.model.bert.eval()
 
     def build(self):
         self.image_encoder = build_image_encoder(
             self.config.image_encoder, self.config.direct_features_input
         )
         if self.freeze_image_encoder:
-            for param in self.image_encoder.parameters():
-                param.requires_grad = False
+            for p in self.image_encoder.parameters():
+                p.requires_grad = False
         if self.training_head_type == "pretraining":
             self.model = FashionViLForPretraining(self.config)
         elif self.training_head_type == "classification":
@@ -62,8 +60,9 @@ class FashionViL(BaseModel):
         else:
             raise NotImplementedError
         if self.freeze_transformer:
-            for param in self.model.bert.parameters():
-                param.requires_grad = False
+            for n, p in self.model.bert.named_parameters():
+                if not n.startswith("encoder.prompts"):
+                    p.requires_grad = False
 
         if self.config.special_visual_initialize:
             self.model.bert.embeddings.initialize_visual_from_pretrained()

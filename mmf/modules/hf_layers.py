@@ -313,6 +313,24 @@ class BertEncoderJit(BertEncoder):
         self.layer = nn.ModuleList(
             [BertLayerJit(config) for _ in range(config.num_hidden_layers)]
         )
+        self.prompt = config.prompt
+        if self.prompt == "deep":
+            self.prompts = nn.ParameterList(
+                [
+                    nn.Parameter(
+                        nn.init.xavier_uniform_(torch.empty(1, 30, config.hidden_size))
+                    )
+                    for _ in range(config.num_hidden_layers)
+                ]
+            )
+            self.layer_norm = nn.LayerNorm(
+                config.hidden_size, eps=config.layer_norm_eps
+            )
+        elif self.prompt == "shallow":
+            self.prompts = nn.Parameter(torch.zeros(1, 30, config.hidden_size))
+            self.layer_norm = nn.LayerNorm(
+                config.hidden_size, eps=config.layer_norm_eps
+            )
 
     def forward(
         self,
@@ -331,14 +349,55 @@ class BertEncoderJit(BertEncoder):
             if not torch.jit.is_scripting() and output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
 
-            layer_outputs = layer_module(
-                hidden_states,
-                attention_mask,
-                None,
-                encoder_hidden_states,
-                encoder_attention_mask,
-            )
-            hidden_states = layer_outputs[0]
+            if self.prompt == "deep":
+                bs = hidden_states.shape[0]
+                prompt = self.prompts[i].expand(bs, -1, -1)
+                pl = prompt.size(1)
+                layer_outputs = layer_module(
+                    self.layer_norm(torch.cat((prompt, hidden_states), dim=1)),
+                    torch.cat(
+                        (
+                            torch.zeros((bs, 1, 1, pl), device=attention_mask.device),
+                            attention_mask,
+                        ),
+                        dim=-1,
+                    ),
+                    None,
+                    encoder_hidden_states,
+                    encoder_attention_mask,
+                )
+                hidden_states = layer_outputs[0][:, pl:]
+            elif self.prompt == "shallow":
+                bs = hidden_states.shape[0]
+                prompt = self.prompts.expand(bs, -1, -1)
+                pl = prompt.size(1)
+                layer_outputs = layer_module(
+                    self.layer_norm(torch.cat((prompt, hidden_states), dim=1))
+                    if i == 0
+                    else hidden_states,
+                    torch.cat(
+                        (
+                            torch.zeros((bs, 1, 1, pl), device=attention_mask.device),
+                            attention_mask,
+                        ),
+                        dim=-1,
+                    ),
+                    None,
+                    encoder_hidden_states,
+                    encoder_attention_mask,
+                )
+                hidden_states = (
+                    layer_outputs[0][:, pl:] if i == 11 else layer_outputs[0]
+                )
+            else:
+                layer_outputs = layer_module(
+                    hidden_states,
+                    attention_mask,
+                    None,
+                    encoder_hidden_states,
+                    encoder_attention_mask,
+                )
+                hidden_states = layer_outputs[0]
 
             if not torch.jit.is_scripting() and output_attentions:
                 all_attentions = all_attentions + (layer_outputs[1],)

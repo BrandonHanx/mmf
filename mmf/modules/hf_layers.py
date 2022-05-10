@@ -323,8 +323,11 @@ class BertEncoderJit(BertEncoder):
                     for _ in range(config.num_hidden_layers)
                 ]
             )
-            self.layer_norm = nn.LayerNorm(
-                config.hidden_size, eps=config.layer_norm_eps
+            self.layer_norm = nn.ModuleList(
+                [
+                    nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+                    for _ in range(config.num_hidden_layers)
+                ]
             )
         elif self.prompt == "shallow":
             self.prompts = nn.Parameter(torch.zeros(1, 30, config.hidden_size))
@@ -354,7 +357,7 @@ class BertEncoderJit(BertEncoder):
                 prompt = self.prompts[i].expand(bs, -1, -1)
                 pl = prompt.size(1)
                 layer_outputs = layer_module(
-                    self.layer_norm(torch.cat((prompt, hidden_states), dim=1)),
+                    self.layer_norm[i](torch.cat((prompt, hidden_states), dim=1)),
                     torch.cat(
                         (
                             torch.zeros((bs, 1, 1, pl), device=attention_mask.device),

@@ -1,0 +1,78 @@
+# FashionGen data nums: 60147
+
+includes:
+- configs/models/fashionvil/defaults.yaml
+
+dataset_config:
+  fashiongen:
+    use_images: true
+    use_features: false
+    subcategory_label: true
+
+model_config:
+  fashionvil:
+    freeze_image_encoder: true
+    freeze_transformer: true
+    prompt: shallow
+    image_encoder:
+      type: torchvision_resnet
+      params:
+        name: resnet50
+        pretrained: true
+        zero_init_residual: false
+        num_output_features: -1
+        pool_type: avg
+    lr_multiplier: 20
+    direct_features_input: false
+    bert_model_name: bert-base-uncased
+    training_head_type: classification
+    bypass_transformer: false
+    num_labels: 121
+    losses:
+      - type: cross_entropy
+
+scheduler:
+  type: multi_step
+  params:
+    use_warmup: false
+    lr_steps:
+    - 43260
+    - 86520
+    lr_ratio: 0.1
+    warmup_iterations: 7210
+    warmup_factor: 0.25
+
+optimizer:
+  type: adam_w
+  params:
+    lr: 2e-5
+    eps: 1e-8
+    weight_decay: 0.0
+
+evaluation:
+  metrics:
+    - accuracy
+    - macro_f1
+
+training:
+  experiment_name: deep_prompt_fashiongen
+  batch_size: 32
+  lr_scheduler: true
+  max_updates: 28840
+  log_interval: 10
+  checkpoint_interval: 14420
+  evaluation_interval: 1442
+  early_stop:
+    criteria: fashiongen/accuracy
+    minimize: false
+  wandb:
+    enabled: true
+
+run_type: train_val
+
+checkpoint:
+  resume_pretrained: true
+  resume_file: save/backup_ckpts/fashionvil_final.pth
+  pretrained_state_mapping:
+    image_encoder: image_encoder
+    model.bert: model.bert

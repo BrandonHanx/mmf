@@ -61,7 +61,9 @@ class FashionViL(BaseModel):
             raise NotImplementedError
         if self.freeze_transformer:
             for n, p in self.model.bert.named_parameters():
-                if not n.startswith("encoder.prompts"):
+                if not n.startswith("encoder.prompts") and not n.startswith(
+                    "encoder.layer_norm"
+                ):
                     p.requires_grad = False
 
         if self.config.special_visual_initialize:

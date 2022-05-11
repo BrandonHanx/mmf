@@ -10,8 +10,8 @@ dataset_config:
 
 model_config:
   fashionvil:
-    freeze_image_encoder: true
-    freeze_transformer: true
+    freeze_image_encoder: false
+    freeze_transformer: false
     prompt: deep
     image_encoder:
       type: torchvision_resnet
@@ -43,7 +43,7 @@ scheduler:
 optimizer:
   type: adam_w
   params:
-    lr: 1e-4
+    lr: 1e-5
     eps: 1e-8
     weight_decay: 1e-4
 
@@ -52,7 +52,7 @@ evaluation:
     - r@k_fashioniq
 
 training:
-  experiment_name: deep30_prompt_fashioniq
+  experiment_name: deep30_prompt_fashioniq_all_init
   batch_size: 32
   lr_scheduler: true
   max_updates: 44960

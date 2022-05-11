@@ -27,6 +27,7 @@ class FashionViL(BaseModel):
         self.double_view = config.get("double_view", False)
         self.freeze_image_encoder = config.get("freeze_image_encoder", False)
         self.freeze_transformer = config.get("freeze_transformer", False)
+        self.freeze_prompts = config.get("freeze_prompts", False)
 
         if self.training_head_type == "pretraining":
             self.task_for_inference = config.task_for_inference
@@ -62,6 +63,12 @@ class FashionViL(BaseModel):
         if self.freeze_transformer:
             for n, p in self.model.bert.named_parameters():
                 if not n.startswith("encoder.prompts") and not n.startswith(
+                    "encoder.layer_norm"
+                ):
+                    p.requires_grad = False
+        if self.freeze_prompts:
+            for n, p in self.model.bert.named_parameters():
+                if n.startswith("encoder.prompts") and not n.startswith(
                     "encoder.layer_norm"
                 ):
                     p.requires_grad = False
